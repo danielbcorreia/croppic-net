@@ -6,7 +6,7 @@ Croppic Server-side .NET (C#) Implementation using ASP.NET MVC
 Notes:
 ======
 
-- This implementation abstracts the Storage provider, but provides a FileSystem implementation. You can create your own implementation of the ITemporaryStorage<TKey> interface to store the pictures to anywhere you want.
+- This implementation abstracts the Storage provider, but provides a FileSystem implementation. You can create your own implementation of the IPictureStorage interface to store the pictures to anywhere you want.
 - To simplify the configuration, no dependency injector was used, but the code is prepared for one.
 - You should provide a ILog implementation so you can log any errors cropping pictures.
 - The only external dependency (outside of Microsoft stuff) is the SixPack library (used for Logging abstraction and ConfigurationSection deserialization in this case).
