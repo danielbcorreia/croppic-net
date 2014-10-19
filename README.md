@@ -15,14 +15,15 @@ Quirks on Croppic.js
 ====================
 
 - There is a bug in the original JS of croppic, that only accepts responses in text/html. There is config flag that you can use if you don't want to change the JS, but if you can make this change:
-'''
+
+```
 response = jQuery.parseJSON(data)
-'''
+```
 
 to
 
-'''
+```
 response = typeof data === 'string' ? jQuery.parseJSON(data) : data
-'''
+```
 
 This appears two times in the entire JS file.
