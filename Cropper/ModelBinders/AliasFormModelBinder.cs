@@ -14,24 +14,7 @@ namespace Cropper.ModelBinders
             if (aliasAttribute != null)
             {
                 var strValue = controllerContext.HttpContext.Request.Form[aliasAttribute.Name];
-                object value;
-
-                try
-                {
-                    value = Convert.ChangeType(strValue, propertyDescriptor.PropertyType);
-                }
-                catch (FormatException e)
-                {
-                    // small hack to round floats to integers, needed because the original cropper JS does not handle half-pixel values...
-                    if (propertyDescriptor.PropertyType == typeof (int) && strValue.Contains("."))
-                    {
-                        value = (int)Math.Round(Convert.ToDouble(strValue));
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                var value = Convert.ChangeType(strValue, propertyDescriptor.PropertyType);
 
                 propertyDescriptor.SetValue(bindingContext.Model, value);
             }

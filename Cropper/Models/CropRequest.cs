@@ -26,13 +26,13 @@ namespace Cropper.Models
         /// your new scaled image width
         /// </summary>
         [Alias("imgW")]
-        public int ScaledWidth { get; set; }
+        public double ScaledWidth { get; set; }
 
         /// <summary>
         /// your new scaled image height
         /// </summary>
         [Alias("imgH")]
-        public int ScaledHeight { get; set; }
+        public double ScaledHeight { get; set; }
 
         /// <summary>
         /// top left corner of the cropped image in relation to scaled image

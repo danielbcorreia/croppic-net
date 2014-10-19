@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -105,18 +106,21 @@ namespace Cropper.Controllers
             using (var originalPicture = _storage.Open(originalId))
             {
                 var image = Image.FromStream(originalPicture);
-                bitmap = new Bitmap(image, model.ScaledWidth, model.ScaledHeight);
+                bitmap = new Bitmap(image, (int)model.ScaledWidth, (int)model.ScaledHeight);
+            }
+
+            var croppedBitmap = new Bitmap(model.CroppedWidth, model.CroppedHeight);
+            using (var g = Graphics.FromImage(croppedBitmap))
+            {
+                g.DrawImage(bitmap, 
+                    new Rectangle(0, 0, model.CroppedWidth, model.CroppedHeight), 
+                    new Rectangle(model.CroppedX, model.CroppedY, model.CroppedWidth, model.CroppedHeight), GraphicsUnit.Pixel);
             }
 
             // create the cropped picture on storage
             using (var croppedPicture = _storage.Create(croppedId))
             {
-                // crop the image according to the request
-                var cropArea = new Rectangle(model.CroppedX, model.CroppedY, model.CroppedWidth, model.CroppedHeight);
-                bitmap = bitmap.Clone(cropArea, bitmap.PixelFormat);
-
-                // copy the resulting image to storage
-                bitmap.Save(croppedPicture, CropperSettings.StoredPictureImageFormatInstance);
+                croppedBitmap.Save(croppedPicture, CropperSettings.StoredPictureImageFormatInstance);
             }
         }
 
