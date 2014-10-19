@@ -103,8 +103,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="ImageResult.cs" />
     <Compile Include="ITemporaryStorage.cs" />
-    <Compile Include="LocalTemporaryStorage.cs" />
+    <Compile Include="FileSystemPictureStorage.cs" />
     <Compile Include="ModelBinders\AliasAttribute.cs" />
     <Compile Include="ModelBinders\AliasFormModelBinder.cs" />
     <Compile Include="Models\CropRequest.cs" />

@@ -10,37 +10,7 @@ namespace Cropper
     {
         public bool ForceHtmlContentTypeInResponses { get; set; }
 
-        public string StoredPictureMediaType { get; set; }
-
-        public string StoredPictureExtension { get; set; }
-
-        public string StoredPictureImageFormat { get; set; }
-
         public string AllowedCrossOriginRequests { get; set; }
-
-        // read only, parsed from other properties
-
-        private ImageFormat _imageFormatInstance;
-        public ImageFormat StoredPictureImageFormatInstance
-        {
-            get
-            {
-                if (_imageFormatInstance != null)
-                {
-                    return _imageFormatInstance;
-                }
-
-                var property = typeof(ImageFormat)
-                    .GetProperty(StoredPictureImageFormat, BindingFlags.Public | BindingFlags.Static);
-
-                if (property == null)
-                {
-                    throw new ConfigurationErrorsException("Invalid ImageFormat name");
-                }
-
-                return _imageFormatInstance = (ImageFormat)property.GetValue(null);
-            }
-        }
     }
 
     public interface ICropperConfigurationSection
@@ -54,26 +24,6 @@ namespace Cropper
         /// then we don't need to parse it again (and we would also get an error).
         /// </summary>
         bool ForceHtmlContentTypeInResponses { get; }
-
-        /// <summary>
-        /// The mediatype of the images that are stored. E.g.: image/png
-        /// </summary>
-        string StoredPictureMediaType { get; }
-
-        /// <summary>
-        /// The extension of the images that are stored, E.g.: png
-        /// </summary>
-        string StoredPictureExtension { get; }
-
-        /// <summary>
-        /// The System.Drawing.Imaging.ImageFormat name of the images that are stored, E.g.: Png
-        /// </summary>
-        string StoredPictureImageFormat { get; }
-
-        /// <summary>
-        /// The System.Drawing.Imaging.ImageFormat instance of the images that are stored, E.g.: ImageFormat.Png
-        /// </summary>
-        ImageFormat StoredPictureImageFormatInstance { get; }
 
         /// <summary>
         /// Allow cross-origin requests from the specified origins

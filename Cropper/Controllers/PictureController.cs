@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using Cropper.ModelBinders;
@@ -13,15 +14,15 @@ namespace Cropper.Controllers
     /*
      * Before you go and use this code in your project, here is what you have to do:
      * - choose the image format that will be saved to disk and change the cropper settings in web.config
-     * - if you can, setup an dependency injector and configure ITemporaryStorage<string> to the persistence of your choice. 
-     *   if you choose the local filesystem, you can use the LocalTemporaryStorage<string> implementation (configure it as a singleton or static).
+     * - if you can, setup an dependency injector and configure IPictureStorage to the persistence of your choice. 
+     *   if you choose the local filesystem, you can use the FileSystemTemporaryPictureStorage implementation (configure it as a singleton or static).
      * - setup a logging library so you know when errors happen when cropping.
      */
 
     public class PictureController : Controller
     {
         // TODO get via dependency injection (singleton scope), and remove the "static" keyword.
-        private static readonly ITemporaryStorage<string> _storage = new LocalTemporaryStorage<string>();
+        private static readonly IPictureStorage _storage = new FileSystemPictureStorage();
 
         // TODO add your own log implementation
         private static readonly ILog Log = new NullLog();
@@ -32,7 +33,8 @@ namespace Cropper.Controllers
         [HttpGet]
         public ActionResult Download(string id)
         {
-            return new FileStreamResult(_storage.Open(id), CropperSettings.StoredPictureMediaType);
+            var image = _storage.Get(id);
+            return new ImageResult(image, id);
         }
 
         [HttpPost]
@@ -41,6 +43,8 @@ namespace Cropper.Controllers
             // check for a valid mediatype
             if (!img.ContentType.StartsWith("image/"))
             {
+                Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
                 return Json(new
                 {
                     status = CroppicStatuses.Error,
@@ -50,23 +54,21 @@ namespace Cropper.Controllers
 
             // load the image from the upload and generate a new filename
             var image = Image.FromStream(img.InputStream);
-            var filename = GenerateFilenameFor(image.Width, image.Height);
+            var extension = Path.GetExtension(img.FileName);
+            var id = GenerateIdFor(image.Width, image.Height, extension);
 
             // save to storage
-            using (var stream = _storage.Create(filename))
-            {
-                image.Save(stream, CropperSettings.StoredPictureImageFormatInstance);
-            }
+            _storage.Create(image, id);
 
             var obj = new
             {
                 status = CroppicStatuses.Success,
-                url = Url.ActionAbsolute("Download", new { id = filename }),
+                url = Url.ActionAbsolute("Download", new { id }),
                 width = image.Width,
                 height = image.Height
             };
 
-            return Json(obj);
+            return SerializedObject(obj);
         }
 
         [HttpPost]
@@ -75,7 +77,8 @@ namespace Cropper.Controllers
             // extract original image ID and generate a new filename for the cropped result
             var originalUri = new Uri(model.ImageUrl);
             var originalId = originalUri.Segments.Last();
-            var croppedId = GenerateFilenameFor(model.CroppedWidth, model.CroppedHeight);
+            var extension = Path.GetExtension(originalId);
+            var croppedId = GenerateIdFor(model.CroppedWidth, model.CroppedHeight, extension);
 
             try
             {
@@ -85,14 +88,16 @@ namespace Cropper.Controllers
             {
                 Log.HandleException(e);
 
-                return Json(new
+                Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+                return SerializedObject(new
                 {
                     status = CroppicStatuses.Error,
                     message = "internal error cropping the image"
                 });
             }
 
-            return Json(new
+            return SerializedObject(new
             {
                 status = CroppicStatuses.Success,
                 url = Url.ActionAbsolute("Download", new { id = croppedId })
@@ -103,9 +108,8 @@ namespace Cropper.Controllers
         {
             // load the original picture and resample it to the scaled values
             Bitmap bitmap;
-            using (var originalPicture = _storage.Open(originalId))
+            using (var image = _storage.Get(originalId))
             {
-                var image = Image.FromStream(originalPicture);
                 bitmap = new Bitmap(image, (int)model.ScaledWidth, (int)model.ScaledHeight);
             }
 
@@ -118,17 +122,26 @@ namespace Cropper.Controllers
             }
 
             // create the cropped picture on storage
-            using (var croppedPicture = _storage.Create(croppedId))
-            {
-                croppedBitmap.Save(croppedPicture, CropperSettings.StoredPictureImageFormatInstance);
-            }
+            _storage.Create(croppedBitmap, croppedId);
         }
 
-        private string GenerateFilenameFor(int width, int height)
+        private string GenerateIdFor(int width, int height, string extension)
         {
             // e.g.: e2384d8f-f24e-47c8-b1d0-d2c286dd9c1b-490x240.png
 
-            return string.Format("{0}-{1}x{2}.{3}", Guid.NewGuid(), width, height, CropperSettings.StoredPictureExtension);
+            return string.Format("{0}-{1}x{2}.{3}", Guid.NewGuid(), width, height, extension);
+        }
+
+        private ActionResult SerializedObject(object obj)
+        {
+            var result = Json(obj);
+
+            if (CropperSettings.ForceHtmlContentTypeInResponses)
+            {
+                result.ContentType = "text/html";
+            }
+
+            return result;
         }
     }
 

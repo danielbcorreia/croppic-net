@@ -1,25 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.IO;
+﻿using System.Drawing;
 
 namespace Cropper
 {
     /// <summary>
-    /// Provides a temporary storage abstraction.
+    /// Provides a picture storage abstraction.
     /// </summary>
-    /// <typeparam name="TKey">The type of the key.</typeparam>
-    public interface ITemporaryStorage<TKey>
+    public interface IPictureStorage
     {
         /// <summary>
-        /// Creates a new file on the shared storage.
+        /// Creates a new file picture on storage with the given id.
         /// </summary>
-        Stream Create(TKey key);
+        void Create(Image image, string id);
 
         /// <summary>
-        /// Gets the file stream associated by the specified key.
+        /// Gets the image with the given id.
         /// </summary>
-        Stream Open(TKey key);
+        Image Get(string id);
     }
 }
