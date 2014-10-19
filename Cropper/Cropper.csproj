@@ -104,6 +104,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="ImageResult.cs" />
+    <Compile Include="ImageUtils.cs" />
     <Compile Include="ITemporaryStorage.cs" />
     <Compile Include="FileSystemPictureStorage.cs" />
     <Compile Include="ModelBinders\AliasAttribute.cs" />

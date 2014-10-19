@@ -15,7 +15,7 @@ namespace Cropper.Controllers
      * Before you go and use this code in your project, here is what you have to do:
      * - choose the image format that will be saved to disk and change the cropper settings in web.config
      * - if you can, setup an dependency injector and configure IPictureStorage to the persistence of your choice. 
-     *   if you choose the local filesystem, you can use the FileSystemTemporaryPictureStorage implementation (configure it as a singleton or static).
+     *   if you choose the local filesystem, you can use the FileSystemPictureStorage implementation (configure it as a singleton or static).
      * - setup a logging library so you know when errors happen when cropping.
      */
 
@@ -82,7 +82,13 @@ namespace Cropper.Controllers
 
             try
             {
-                CropImage(model, originalId, croppedId);
+                // load the original picture and resample it to the scaled values
+                var bitmap = ImageUtils.Resize(_storage.Get(originalId), (int)model.ScaledWidth, (int)model.ScaledHeight);
+
+                var croppedBitmap = ImageUtils.Crop(bitmap, model.CroppedX, model.CroppedY, model.CroppedWidth, model.CroppedHeight);
+
+                // create the cropped picture on storage
+                _storage.Create(croppedBitmap, croppedId);
             }
             catch (Exception e)
             {
@@ -102,27 +108,6 @@ namespace Cropper.Controllers
                 status = CroppicStatuses.Success,
                 url = Url.ActionAbsolute("Download", new { id = croppedId })
             });
-        }
-
-        private void CropImage(CropRequest model, string originalId, string croppedId)
-        {
-            // load the original picture and resample it to the scaled values
-            Bitmap bitmap;
-            using (var image = _storage.Get(originalId))
-            {
-                bitmap = new Bitmap(image, (int)model.ScaledWidth, (int)model.ScaledHeight);
-            }
-
-            var croppedBitmap = new Bitmap(model.CroppedWidth, model.CroppedHeight);
-            using (var g = Graphics.FromImage(croppedBitmap))
-            {
-                g.DrawImage(bitmap, 
-                    new Rectangle(0, 0, model.CroppedWidth, model.CroppedHeight), 
-                    new Rectangle(model.CroppedX, model.CroppedY, model.CroppedWidth, model.CroppedHeight), GraphicsUnit.Pixel);
-            }
-
-            // create the cropped picture on storage
-            _storage.Create(croppedBitmap, croppedId);
         }
 
         private string GenerateIdFor(int width, int height, string extension)
